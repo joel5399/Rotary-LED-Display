@@ -1,5 +1,5 @@
 #include "LED.h"
-
+#include <math.h>
 
 
 LEDClass::LEDClass(){
@@ -11,28 +11,37 @@ LEDClass::LEDClass(){
     yPos = 0;
 }
 
-void LEDClass::setDistance(double distance){
-    distance = distance;
+void LEDClass::setDistance(const double &Distance) {
+    distance = Distance;
 }
 
-void LEDClass::setRed(uint8_t red){
-    red = red;
+void LEDClass::setRed(const uint8_t &Red){
+    red = Red;
 }
 
-void LEDClass::setGreen(uint8_t green){
-    green = green;
+void LEDClass::setGreen(const uint8_t &Green){
+    green = Green;
 }
 
-void LEDClass::setBlue(uint8_t blue){
-    blue = blue;
+void LEDClass::setBlue(const uint8_t &Blue){
+    blue = Blue;
 }
 
-void LEDClass::setXPos(int xPos){
-    xPos = xPos;
+void LEDClass::setXYCartesianFromAngle(const double& angle, const int &wingSpan) {
+    const double radius = (-1) * ((wingSpan/2) - distance);
+    const double midPoint = (wingSpan/2);
+    const int xPos = radius * sin(angle) + midPoint;
+    const int yPos = (-1) * radius * cos(angle) + midPoint;
+    this->setXPos(xPos);
+    this->setYPos(yPos);
 }
 
-void LEDClass::setYPos(int yPos){
-    yPos = yPos;
+void LEDClass::setXPos(const int &XPos){
+    xPos = XPos;
+}
+
+void LEDClass::setYPos(const int &YPos){
+    yPos = YPos;
 }
 
 double LEDClass::getDistance(){

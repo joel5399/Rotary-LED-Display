@@ -8,12 +8,11 @@ class LEDClass
 public:
     LEDClass();
 
-    void setDistance(double Distance);
-    void setRed(uint8_t Red);
-    void setGreen(uint8_t Green);
-    void setBlue(uint8_t Blue);
-    void setXPos(int x);
-    void setYPos(int y);
+    void setDistance(const double &Distance);
+    void setRed(const uint8_t &Red);
+    void setGreen(const uint8_t &Green);
+    void setBlue(const uint8_t &Blue);
+    void setXYCartesianFromAngle(const double &angle, const int &wingSpan);
 
 
     double getDistance();
@@ -24,14 +23,17 @@ public:
     int getYPos();
     
 private:
+    void setXPos(const int &XPos);
+    void setYPos(const int &YPos);
     //Variables
+
     //Collor
     uint8_t red;
     uint8_t green;
     uint8_t blue;
 
     //Position
-    double distance; //Distanz vom Mittelpunkt aus
+    double distance; //distance from beginnning of the strip
     int xPos;
     int yPos;
 };

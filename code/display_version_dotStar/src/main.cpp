@@ -10,10 +10,10 @@
 /*******************************************
  * Positionierung x und y
  * 
- *  LEDs
- *  0 1 2 3 4   5 6 7 8 9
+ * (conector)left    right
+ *       0 1 2 3 4   5 6 7 8 9
  *    
- *  o o o o o x o o o o o
+ *       o o o o o x o o o o o
  * 
  *  /\
  *  |
@@ -28,134 +28,109 @@
 #include <Adafruit_DotStar.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <math.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "LED.h"
 #include "Image.h"
 
 //Pin Defines
-const int DATAPIN = 4;
-const int CLOCKPIN = 5;
-const int Hall_Sens = 2;
+const int dataPin = 4;
+const int clockPin = 5;
+const int hallSensor = 2;
 
 //Programm const
-const double Ard_Freq = 16000000;
-const double LED_Distance = 6.944444;                       // [mm]
-const int LED_Count = 58;                                   // 
-const uint8_t BRIGHTNESS = 50;                              // Set BRIGHTNESS to about 1/5 (max = 255)
-const double X_Y_TO_Left_Bottom = LED_Distance * LED_Count;
+const double angleOffset = 1.7;
+const double LEDOffset = 2.5;
+const double LEDDistance = 6.944444;                       // [mm]
+const int LEDCount = 58;                                   // 
+const uint8_t brightness = 20;                              // Set BRIGHTNESS to about 1/5 (max = 255)
+const double X_Y_TO_Left_Bottom = LEDDistance * (LEDCount / 2);
 
 
 //Variables
 unsigned long previousTime = 0;
-double CycleTime_S = 0;
-LEDClass LED[LED_Count];
+double cycleTime_S = 0;
+LEDClass LED[LEDCount];
 
 //Skalierungsfaktor 
-const int spannweite = 400; 
-uint8_t scale = spannweite / sizeof(Smiley[0]);
+const int wingspan = LEDCount * LEDDistance; // [mm]
+const double ImgScale = wingspan / sizeof(Smiley[0]); // [mm / arrayLength]
 
 
 //Functions
-void Get_RPS();
-float get_Angle();
-void Set_Collors();
-void Set_LEDs();
-void setLEDPosition(const int LEDPos, const int );
+void getCycleTime();
+double getCurrentAngle();
+void setLEDPosition(const int &LEDPos, const double &CurrentAngle);
+void setLEDCollors(const int &LEDPos);
+void UpdateLEDs();
+
 
 //Classes
-Adafruit_DotStar strip(LED_Count + LED_Count, DATAPIN, CLOCKPIN, DOTSTAR_BGR);
-
-
+Adafruit_DotStar strip(LEDCount, DOTSTAR_BGR);
 
 void setup() {
-  //Start Serial
-  Serial.begin(115200);
+    // Start Serial
+    Serial.begin(115200);
 
-  //Interrupt for Hallsensor
-  pinMode(Hall_Sens,INPUT_PULLUP);
-  interrupts();
-  attachInterrupt(digitalPinToInterrupt(Hall_Sens), Get_RPS, FALLING);
-  
-  //Create LEDs Right
-  for(size_t i = 0; i<LED_Count; i++){
-    LEDsHall[i].set_Distance(i*LED_Distance);
-  }
-
-  //Create LEDs Left
-  for(size_t i = 0; i<LED_Count; i++){
-    LEDs_o_Hall[i].set_Distance(i*LED_Distance);
-  }  
-  
-  strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
-  strip.setBrightness(BRIGHTNESS); // Set BRIGHTNESS to about 1/5 (max = 255)
-  strip.clear();            // Turn OFF all pixels ASAP
-
-  
+    // Interrupt for HallSensor
+    pinMode(hallSensor,INPUT_PULLUP);
+    interrupts();
+    attachInterrupt(digitalPinToInterrupt(hallSensor), getCycleTime, RISING);
+    
+    // Create LEDs
+    for(size_t i = 0; i < LEDCount; i++) {
+        LED[i].setDistance(i * LEDDistance + LEDOffset);
+    }
+    
+    // INITIALIZE Dorstar strip object
+    strip.begin();                   
+    strip.setBrightness(brightness); 
+    strip.clear();              
 }
 
 void loop() {
+    double currentAngle = getCurrentAngle();
 
-  double currentAngle = get_Angle();
+    for(size_t i = 0; i < LEDCount; i++) {
+        setLEDPosition(i,  currentAngle);
+        setLEDCollors(i);
+    }
 
-  for(size_t i = 0; i < LED_Count; i++){
-    setLEDPosition(LEDsHall[i])
-    LEDsHall[i].set_x(int(sin(currentAngle)*LEDsHall[i].get_Distance()) + X_Y_TO_Left_Bottom);
-    LEDsHall[i].set_y(int(cos(currentAngle)*LEDsHall[i].get_Distance()) + X_Y_TO_Left_Bottom);
-  }
-*/
-  for(size_t i = 0; i < LED_Count; i++){
-    LEDs_o_Hall[i].set_x(int(-sin(currentAngle)*LEDs_o_Hall[i].get_Distance()) + X_Y_TO_Left_Bottom);
-    LEDs_o_Hall[i].set_y(int(-cos(currentAngle)*LEDs_o_Hall[i].get_Distance()) + X_Y_TO_Left_Bottom);
-  }
-
-  //Set the Collors
-  Set_Collors();
-  Set_LEDs();
-
-  
+        UpdateLEDs();
 }
 
-//Interrup routine for getting the RPM from the device
+//Interrupt routine for getting the RPM from the device
 void getCycleTime() {
-  unsigned long elapsedTime = micros() - previousTime;
-  previousTime = micros();
-  CycleTime_S = (double)elapsedTime * 1e-6;
+    unsigned long elapsedTime = micros() - previousTime;
+    previousTime = micros();
+    cycleTime_S = 0.09365;
+    //cycleTime_S = (double)elapsedTime * 1e-6;
 }
-
 
 //Calculate Angle (rad) from revolutions
-float getCurrentAngle() {
-  double Time_In_S = (double)(micros() - previousTime) * 1e-6;
-  float Angle = (Time_In_S*2*PI) / CycleTime_S;
-  return Angle;
+double getCurrentAngle() {
+    double Time_In_S = (double)(micros() - previousTime) * 1e-6;
+    return (Time_In_S*2*PI) / cycleTime_S + angleOffset;
 }
 
-void setLEDCollors(){
-  for(size_t i = 0; i < LED_Count; i++){
-    LEDsHall[i].set_Red(Smiley[(uint8_t)LEDsHall[i].get_x()/scale][(uint8_t)LEDsHall[i].get_y()/scale]);
-    LEDsHall[i].set_Blue(Smiley[(uint8_t)LEDsHall[i].get_x()/scale][(uint8_t)LEDsHall[i].get_y()/scale]);
-    LEDsHall[i].set_Green(Smiley[(uint8_t)LEDsHall[i].get_x()/scale][(uint8_t)LEDsHall[i].get_y()/scale]);
-    LEDs_o_Hall[i].set_Red(Smiley[(uint8_t)LEDs_o_Hall[i].get_x()/scale][(uint8_t)LEDs_o_Hall[i].get_y()/scale]);
-    LEDs_o_Hall[i].set_Blue(Smiley[(uint8_t)LEDs_o_Hall[i].get_x()/scale][(uint8_t)LEDs_o_Hall[i].get_y()/scale]);
-    LEDs_o_Hall[i].set_Green(Smiley[(uint8_t)LEDs_o_Hall[i].get_x()/scale][(uint8_t)LEDs_o_Hall[i].get_y()/scale]);
-  }
 
+void setLEDPosition(const int &LEDPos, const double &CurrentAngle) {
+    LED[LEDPos].setXYCartesianFromAngle(CurrentAngle, wingspan);
 }
 
-void Set_LEDs(){
-  uint8_t j = 0;
-  for(size_t i = LED_Count; i > 0; i--){
-    strip.setPixelColor(j,LEDs_o_Hall[i].get_Red(), LEDs_o_Hall[i].get_Green(),LEDs_o_Hall[i].get_Blue());
-    j++;
-  }
-/*
-  for(size_t i = 0; i < LED_Count; i++){
-    strip.setPixelColor(j,LEDsHall[i].get_Red(), LEDsHall[i].get_Green(),LEDsHall[i].get_Blue());
-    j++;
-  }
-  */
-  strip.show();
 
+void setLEDCollors(const int &LEDPos) {
+    const uint8_t xPosImg = (double)LED[LEDPos].getXPos() / ImgScale;
+    const uint8_t yPosImg = (double)LED[LEDPos].getYPos() / ImgScale;
+
+    LED[LEDPos].setRed(Smiley[xPosImg][yPosImg]);
+    LED[LEDPos].setBlue(Smiley[xPosImg][yPosImg]);
+    LED[LEDPos].setGreen(Smiley[xPosImg][yPosImg]);
+}
+
+void UpdateLEDs() {
+    for(size_t i = 0; i < LEDCount; i++){
+        strip.setPixelColor(i,LED[i].getRed(), LED[i].getGreen(),LED[i].getBlue());
+    }
+    strip.show();
 }
