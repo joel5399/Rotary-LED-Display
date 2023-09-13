@@ -9,12 +9,12 @@
 
 /*******************************************
  * Positionierung x und y
- * 
+ *
  * (conector)left    right
  *       0 1 2 3 4   5 6 7 8 9
- *    
+ *
  *       o o o o o x o o o o o
- * 
+ *
  *  /\
  *  |
  *  |_____>
@@ -23,7 +23,7 @@
 
 
 
-//Includes
+ //Includes
 #include <Arduino.h>
 #include <Adafruit_DotStar.h>
 #include <Wire.h>
@@ -60,8 +60,8 @@ const double ImgScale = wingspan / sizeof(Smiley[0]); // [mm / arrayLength]
 //Functions
 void getCycleTime();
 double getCurrentAngle();
-void setLEDPosition(const int &LEDPos, const double &CurrentAngle);
-void setLEDCollors(const int &LEDPos);
+void setLEDPosition(const int& LEDPos, const double& CurrentAngle);
+void setLEDCollors(const int& LEDPos);
 void UpdateLEDs();
 
 
@@ -73,26 +73,26 @@ void setup() {
     Serial.begin(115200);
 
     // Interrupt for HallSensor
-    pinMode(hallSensor,INPUT_PULLUP);
+    pinMode(hallSensor, INPUT_PULLUP);
     interrupts();
     attachInterrupt(digitalPinToInterrupt(hallSensor), getCycleTime, RISING);
-    
+
     // Create LEDs
-    for(size_t i = 0; i < LEDCount; i++) {
+    for (size_t i = 0; i < LEDCount; i++) {
         LED[i].setDistance(i * LEDDistance + LEDOffset);
     }
-    
+
     // INITIALIZE Dorstar strip object
-    strip.begin();                   
-    strip.setBrightness(brightness); 
-    strip.clear();              
+    strip.begin();
+    strip.setBrightness(brightness);
+    strip.clear();
 }
 
 void loop() {
     double currentAngle = getCurrentAngle();
     //Serial.println(currentAngle);
-    for(size_t i = 0; i < LEDCount; i++) {
-        setLEDPosition(i,  currentAngle);
+    for (size_t i = 0; i < LEDCount; i++) {
+        setLEDPosition(i, currentAngle);
         setLEDCollors(i);
     }
     UpdateLEDs();
@@ -110,12 +110,12 @@ double getCurrentAngle() {
 }
 
 
-void setLEDPosition(const int &LEDPos, const double &CurrentAngle) {
+void setLEDPosition(const int& LEDPos, const double& CurrentAngle) {
     LED[LEDPos].setXYCartesianFromAngle(CurrentAngle, wingspan);
 }
 
 
-void setLEDCollors(const int &LEDPos) {
+void setLEDCollors(const int& LEDPos) {
     const uint8_t xPosImg = LED[LEDPos].getXPos() / ImgScale;
     const uint8_t yPosImg = LED[LEDPos].getYPos() / ImgScale;
 
@@ -125,8 +125,8 @@ void setLEDCollors(const int &LEDPos) {
 }
 
 void UpdateLEDs() {
-    for(size_t i = 0; i < LEDCount; i++){
-        strip.setPixelColor(i,LED[i].getRed(), LED[i].getGreen(),LED[i].getBlue());
+    for (size_t i = 0; i < LEDCount; i++) {
+        strip.setPixelColor(i, LED[i].getRed(), LED[i].getGreen(), LED[i].getBlue());
     }
     strip.show();
 }
