@@ -3,34 +3,29 @@
 
 #include <vector>
 #include "hardware_controller.hpp"
+#include "pixel.hpp"
+#include <vector>
 
 const char initialBrightness = 20;
 
-class Pixel {
+class RpiDotStar {
 public:
-    Pixel(const char& Red, const char& Green, const char& Blue) {
-        red = Red;
-        green = Green;
-        blue = Blue;
-    }
-
-    char red;
-    char green;
-    char blue;
-}
-
-class RPi_DotStar {
-public:
-    RPi_DotStar(const unsigned& numPixels, HardwareController SpiController);
-    void setPixelColor(const unsigned& index, const char& red, const char& green, const char& blue);
+    RpiDotStar(const unsigned& numPixels, HardwareController* SpiController);
+    ~RpiDotStar();
+    void setPixelColor(Pixel& pixel, const char& red, const char& green, const char& blue);
     void setBrightness(const char& Brightness);
-    void show();
-    int clear(void);
+    void updatePixelPositionsCartesian(const double& currentAngle);
+    void setStripColor(const std::vector<std::vector<std::vector<char> > >& image);
+    void show() const;
+    void clear() const;
 
-private:
     std::vector<Pixel> pixels;
-    HardwareController spiController;
-    char brightness = initialBrightness;
+private:
+    bool imageIs3Dimensional(const int& thirdDimension);
+
+    float wingspan;
+    HardwareController* spiController;
+    float brightness = initialBrightness;
 };
 
 #endif // RPI_DOTSTAR_HPP

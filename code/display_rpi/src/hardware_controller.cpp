@@ -1,62 +1,51 @@
-#include <pigpiod_if2.h>
 #include "hardware_controller.hpp"
 
-enum class Pin {
-    HALL_SENSOR = 3;            //!< TODO Define correct pin
-};
 
-const unsigned int BAUD_RATE = 1_000_000; //!< Baud rate for spi communication
+const unsigned SPI_CHANNEL = 0;
+const unsigned BAUD_RATE = 8000000; //!< Baud rate for spi communication
 
+// Definition der statischen Member-Variable
+RotationController* HardwareController::rotationController = nullptr;
 
 HardwareController::HardwareController() {
     this->pi = pigpio_start(NULL, NULL);
     if (this->pi < 0) {
+        std::cout << this->pi << "\n";
         throw std::runtime_error("error while trying to initialize pigpio!");
         return;
     }
 
-    this->spi = spiOpen(0, BAUD_RATE, 0);
+    this->spi = spi_open(this->pi, SPI_CHANNEL, BAUD_RATE, 0);
     if (this->spi < 0) {
         throw std::runtime_error("error while trying to initialize spi!");
         return;
     }
+    std::cout << "pi ID: " << this->pi << "\n";
+    std::cout << "spi ID: " << this->spi << "\n";
 
-    // PWMs
-    set_mode(this->pi, static_cast<uint>(Pin::PWM_LEFT), PI_OUTPUT);
-    set_mode(this->pi, static_cast<uint>(Pin::PWM_RIGHT), PI_OUTPUT);
-
-    set_PWM_frequency(this->pi, static_cast<uint>(Pin::PWM_LEFT), PWM_FREQ);
-    set_PWM_frequency(this->pi, static_cast<uint>(Pin::PWM_RIGHT), PWM_FREQ);
-
-    set_PWM_range(this->pi, static_cast<uint>(Pin::PWM_LEFT), PWM_RANGE);
-    set_PWM_range(this->pi, static_cast<uint>(Pin::PWM_RIGHT), PWM_RANGE);
-
-    // GPIOs
-    set_mode(this->pi, static_cast<uint>(Pin::DIR_LEFT_1), PI_OUTPUT);
-    set_mode(this->pi, static_cast<uint>(Pin::DIR_LEFT_2), PI_OUTPUT);
-    set_mode(this->pi, static_cast<uint>(Pin::DIR_RIGHT_1), PI_OUTPUT);
-    set_mode(this->pi, static_cast<uint>(Pin::DIR_RIGHT_2), PI_OUTPUT);
-
-    gpio_write(this->pi, static_cast<uint>(Pin::DIR_LEFT_1), 0);
-    gpio_write(this->pi, static_cast<uint>(Pin::DIR_LEFT_2), 0);
-    gpio_write(this->pi, static_cast<uint>(Pin::DIR_RIGHT_1), 0);
-    gpio_write(this->pi, static_cast<uint>(Pin::DIR_RIGHT_2), 0);
+    rotationController = nullptr;
 }
 
 HardwareController::~HardwareController() {
+    spi_close(this->pi, this->spi);
     pigpio_stop(this->pi);
-    spiClose(this->spi);
 }
 
 int HardwareController::updateSpi(char* buf, unsigned count) const {
-    int sendedData = spiWrite(this->spi, buf, count);
-    return sendedData != count ? 1 : 0;
+    int sendedData = spi_write(this->pi, this->spi, buf, count);
+    return unsigned(sendedData) != count ? 1 : 0;
 }
 
-
-
-void HardwareController::setInterrupt(const int& pinInterrupt) const {
-
+void HardwareController::setInterrupt(const unsigned& pinInterrupt, RotationController* RotationController_) {
+    rotationController = RotationController_;
+    int callbackId = callback(this->pi, pinInterrupt, RISING_EDGE, this->callbackFunction);
+    std::cout << "callback ID: " << callbackId << "\n";
 }
 
+unsigned HardwareController::getCurrentTick() const {
+    return get_current_tick(this->pi);
+}
 
+void HardwareController::callbackFunction(int pi, unsigned user_gpio, unsigned level, unsigned tick) {
+    rotationController->setCurrentAngleToZero(tick);
+}

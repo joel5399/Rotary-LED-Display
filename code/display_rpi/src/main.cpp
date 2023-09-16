@@ -5,6 +5,7 @@
 *  Änderungen:
 *  28.11.2022 Erste Tests und Pinabänderungen
 *  01.09.2023 Weiterentwcklung
+*  13.09.2023 cpp Programm entwickelt für Raspberypi
 */
 
 /*******************************************
@@ -21,112 +22,61 @@
  *  (0;0)
  * *****************************************/
 
-
-
  //Includes
-#include <Arduino.h>
-#include <Adafruit_DotStar.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include "LED.h"
-#include "Image.h"
+#include "hardware_controller.hpp"
+#include "rpi_dotstar.hpp"
+#include "rotation_controller.hpp"
+#include "Image.hpp"
+
+#include <unistd.h> 
+#include <iostream>
 
 //Pin Defines
-const int dataPin = 4;
-const int clockPin = 5;
-const int hallSensor = 2;
+enum class Pin {
+    HALL_SENSOR = 4,
+};
 
 //Programm const
-const double angleOffset = 1.7;
-const double LEDOffset = 2.5;
-const double LEDDistance = 6.944444;                       // [mm]
-const int LEDCount = 58;                                   // 
-const uint8_t brightness = 20;                              // Set BRIGHTNESS to about 1/5 (max = 255)
-const double X_Y_TO_Left_Bottom = LEDDistance * (LEDCount / 2);
-
-
-//Variables
-unsigned long previousTime = 0;
-unsigned long cycleTime_myS = 0;
-LEDClass LED[LEDCount];
-
-//Skalierungsfaktor 
-const int wingspan = LEDCount * LEDDistance; // [mm]
-const double ImgScale = wingspan / sizeof(Smiley[0]); // [mm / arrayLength]
-
+const unsigned ledCount = 58;
+const char brightness = 20;    // Brightness in percent
 
 //Functions
-void getCycleTime();
-double getCurrentAngle();
-void setLEDPosition(const int& LEDPos, const double& CurrentAngle);
-void setLEDCollors(const int& LEDPos);
-void UpdateLEDs();
+void setup(RpiDotStar& strip);
 
+int main() {
+    HardwareController hardwareController;
+    RotationController rotationController;
+    RpiDotStar strip(ledCount, &hardwareController);
+    hardwareController.setInterrupt(static_cast<unsigned>(Pin::HALL_SENSOR), &rotationController);
+    setup(strip);
 
-//Classes
-Adafruit_DotStar strip(LEDCount, DOTSTAR_BGR);
-
-void setup() {
-    // Start Serial
-    Serial.begin(115200);
-
-    // Interrupt for HallSensor
-    pinMode(hallSensor, INPUT_PULLUP);
-    interrupts();
-    attachInterrupt(digitalPinToInterrupt(hallSensor), getCycleTime, RISING);
-
-    // Create LEDs
-    for (size_t i = 0; i < LEDCount; i++) {
-        LED[i].setDistance(i * LEDDistance + LEDOffset);
+    while (1) {
+        double currentAngle = rotationController.getCurrentAngle(hardwareController.getCurrentTick());
+        strip.updatePixelPositionsCartesian(currentAngle);
+        strip.setStripColor(image);
+        strip.show();
     }
 
-    // INITIALIZE Dorstar strip object
-    strip.begin();
+}
+
+void setup(RpiDotStar& strip) {
     strip.setBrightness(brightness);
     strip.clear();
-}
-
-void loop() {
-    double currentAngle = getCurrentAngle();
-    //Serial.println(currentAngle);
-    for (size_t i = 0; i < LEDCount; i++) {
-        setLEDPosition(i, currentAngle);
-        setLEDCollors(i);
-    }
-    UpdateLEDs();
-}
-
-//Interrupt routine for getting the RPM from the device
-void getCycleTime() {
-    cycleTime_myS = micros() - previousTime;
-    previousTime = micros();
-}
-
-//Calculate Angle (rad) from revolutions
-double getCurrentAngle() {
-    return ((double)(micros() - previousTime) / (double)(cycleTime_myS)) * 2 * 3.14 + angleOffset;
-}
-
-
-void setLEDPosition(const int& LEDPos, const double& CurrentAngle) {
-    LED[LEDPos].setXYCartesianFromAngle(CurrentAngle, wingspan);
-}
-
-
-void setLEDCollors(const int& LEDPos) {
-    const uint8_t xPosImg = LED[LEDPos].getXPos() / ImgScale;
-    const uint8_t yPosImg = LED[LEDPos].getYPos() / ImgScale;
-
-    LED[LEDPos].setRed(Smiley[xPosImg][yPosImg]);
-    LED[LEDPos].setBlue(Smiley[xPosImg][yPosImg]);
-    LED[LEDPos].setGreen(Smiley[xPosImg][yPosImg]);
-}
-
-void UpdateLEDs() {
-    for (size_t i = 0; i < LEDCount; i++) {
-        strip.setPixelColor(i, LED[i].getRed(), LED[i].getGreen(), LED[i].getBlue());
-    }
     strip.show();
+    usleep(10000);
 }
+
+/*TestProgrmam LEDs
+    while (1) {
+        for (unsigned i = 0; i < ledCount; i++) {
+            strip.pixels.at(i).setBlue(0x40);
+            usleep(2000);
+            strip.show();
+        }
+        for (unsigned i = 0; i < ledCount; i++) {
+            strip.pixels.at(i).setBlue(0x00);
+            usleep(2000);
+            strip.show();
+        }
+    }
+*/
