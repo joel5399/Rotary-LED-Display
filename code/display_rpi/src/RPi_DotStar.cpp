@@ -19,6 +19,10 @@ RpiDotStar::~RpiDotStar() {
     this->show();
 }
 
+void RpiDotStar::loadImage(const cv::Mat& Image) {
+    image = Image;
+}
+
 
 void RpiDotStar::setBrightness(const char& Brightness) {
     if (Brightness > 100) {
@@ -37,15 +41,14 @@ void RpiDotStar::updatePixelPositionsCartesian(const double& currentAngle) {
     }
 }
 
-void RpiDotStar::setStripColor(const std::vector<std::vector<std::vector<char> > >& image) {
+void RpiDotStar::setStripColor() {
+
+    // TODO: change form std::vector.... to cv::Mat
+    // TODO: search for includepath on RPI
 
     // determinate dimensions of image
-    const unsigned widthImage = image.size();
-    const unsigned heightImage = image.at(0).size();
-    if (widthImage == 0 || heightImage == 0) {
-        std::cout << "empty image!\n";
-        return;
-    }
+    const unsigned widthImage = image.rows;
+    const unsigned heightImage = image.cols;
 
     // scaling factors for translating imagecoordinates to pixelcoordinates
     const double imageScaleX = static_cast<double>(widthImage - 1) / this->wingspan;
@@ -55,20 +58,24 @@ void RpiDotStar::setStripColor(const std::vector<std::vector<std::vector<char> >
         // determinate pixelcoordinates for the current pixel
         unsigned xPosImg = static_cast<unsigned>(pixel.getXPos() * imageScaleX);
         unsigned yPosImg = static_cast<unsigned>(pixel.getYPos() * imageScaleY);
+        if (xPosImg > widthImage) {
+            xPosImg = widthImage;
+        }
+        if (yPosImg > heightImage) {
+            yPosImg = heightImage;
+        }
 
-        if (imageIs3Dimensional(image.at(xPosImg).at(yPosImg).size())) {
-            this->setPixelColor(pixel,
-                image.at(xPosImg).at(yPosImg).at(0),
-                image.at(xPosImg).at(yPosImg).at(1),
-                image.at(xPosImg).at(yPosImg).at(2));
+        if (image.channels() == 3) {
+            const cv::Vec3b bgrCollors = image.at<cv::Vec3b>(cv::Point(xPosImg, yPosImg));
+            this->setPixelColor(pixel, bgrCollors[2], bgrCollors[1], bgrCollors[0]);
         }
         else {
-            this->setPixelColor(pixel,
-                image.at(xPosImg).at(yPosImg).at(0),
-                image.at(xPosImg).at(yPosImg).at(0),
-                image.at(xPosImg).at(yPosImg).at(0));
+            unsigned char pixelValue = image.at<uchar>(xPosImg, yPosImg);
+            this->setPixelColor(pixel, pixelValue, pixelValue, pixelValue);
         }
     }
+
+
 }
 
 void RpiDotStar::setPixelColor(Pixel& pixel, const char& red, const char& green, const char& blue) {

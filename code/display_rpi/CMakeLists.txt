@@ -16,7 +16,7 @@ add_definitions(-Wall -Werror -Wno-error=comment)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(pigpio REQUIRED)
-
+find_package(OpenCV REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -32,6 +32,7 @@ find_package(pigpio REQUIRED)
 include_directories(
   ${PROJECT_SOURCE_DIR}/include
   ${pigpio_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -54,6 +55,7 @@ add_executable(
   src/pixel.cpp
   src/rpi_dotstar.cpp
   src/rotation_controller.cpp
+  src/image_processor.cpp
 )
 
 ## Rename C++ executable without prefix
@@ -74,3 +76,4 @@ target_link_libraries(
 )
 
 target_link_libraries(${PROJECT_NAME} pthread)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})

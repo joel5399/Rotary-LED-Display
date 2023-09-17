@@ -26,7 +26,7 @@
 #include "hardware_controller.hpp"
 #include "rpi_dotstar.hpp"
 #include "rotation_controller.hpp"
-#include "Image.hpp"
+#include "image_processor.hpp"
 
 #include <unistd.h> 
 #include <iostream>
@@ -43,17 +43,24 @@ const char brightness = 20;    // Brightness in percent
 //Functions
 void setup(RpiDotStar& strip);
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "include the path to the image as an argument!" << std::endl;
+        return 1;
+    }
+
+    ImageProcessor imageProcessor(argv[1]);
     HardwareController hardwareController;
     RotationController rotationController;
     RpiDotStar strip(ledCount, &hardwareController);
     hardwareController.setInterrupt(static_cast<unsigned>(Pin::HALL_SENSOR), &rotationController);
     setup(strip);
+    strip.loadImage(imageProcessor.getImage());
 
     while (1) {
         double currentAngle = rotationController.getCurrentAngle(hardwareController.getCurrentTick());
         strip.updatePixelPositionsCartesian(currentAngle);
-        strip.setStripColor(image);
+        strip.setStripColor();
         strip.show();
     }
 

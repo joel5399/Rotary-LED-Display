@@ -11,7 +11,7 @@ private:
     double currentAngle;
     unsigned currentCycleTime_us;
     unsigned tickLastZeroCrossing;
-    const double angleOffset = 1.5;
+    const double angleOffset = 3.0;
 };
 
 #endif  // ROTATION_CONTROLLER_HPP
