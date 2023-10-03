@@ -3,7 +3,7 @@
 ## Idea
 The concept behind this project involves rapidly rotating a rod and synchronizing the LEDs to create a discernible image.
 
-![3d-model](/documetation/system.png "")
+![3d-model](/img-src-documentation/system.png "")
 
 ## Hardware
 The entire structure is 3D printed using an FDM printer and assembled using screws. The STL files can be found in the 'printables' folder. To provide both power and data to the LEDs, I employ a [slip ring](https://www.digikey.ch/de/products/detail/adafruit-industries-llc/775/5353617?utm_adgroup=General&utm_term=&productid=5353617https://www.digikey.ch/de/products/detail/adafruit-industries-llc/775/5353617?utm_adgroup=General&utm_term=&productid=5353617). For this project, I have opted for [Dotstar LEDs](https://www.digikey.ch/de/products/detail/adafruit-industries-llc/2241/5761263?utm_adgroup=&utm_term=&productid=5761263&utm_content=) from Adafruit Industries LLC.
@@ -14,7 +14,7 @@ For achieving consistent rotation, I employed a [DC Motor](https://www.conrad.ch
 Initially, I attempted to control the LEDs using an Arduino Uno. However, after conducting a few tests, I discovered that the operating speed of the Uno was insufficient. Consequently, I made the switch to a [Raspberry Pi 1b](https://www.sparkfun.com/products/retired/11546) for improved performance.
 
 ## Electronic
-![schematic](/documetation/schematic.png "")
+![schematic](/img-src-documentation/schematic.png "")
 
 ## Software
 To compile the program, please copy the '/code/display_rpi' folder to your Raspberry Pi. You can use the following command for this task:
