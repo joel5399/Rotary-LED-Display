@@ -73,17 +73,3 @@ void setup(RpiDotStar& strip) {
     usleep(10000);
 }
 
-/*TestProgrmam LEDs
-    while (1) {
-        for (unsigned i = 0; i < ledCount; i++) {
-            strip.pixels.at(i).setBlue(0x40);
-            usleep(2000);
-            strip.show();
-        }
-        for (unsigned i = 0; i < ledCount; i++) {
-            strip.pixels.at(i).setBlue(0x00);
-            usleep(2000);
-            strip.show();
-        }
-    }
-*/

@@ -24,11 +24,13 @@ public:
     std::vector<Pixel> pixels;
 private:
     bool imageIs3Dimensional(const int& thirdDimension);
+    void resizeImageToRectangular();
 
     cv::Mat image;
     float wingspan;
     HardwareController* spiController;
     float brightness = initialBrightness;
+    unsigned targetImageSize;
 };
 
 #endif // RPI_DOTSTAR_HPP

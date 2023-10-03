@@ -43,14 +43,11 @@ void RpiDotStar::updatePixelPositionsCartesian(const double& currentAngle) {
 
 void RpiDotStar::setStripColor() {
 
-    // TODO: change form std::vector.... to cv::Mat
-    // TODO: search for includepath on RPI
+    //TODO: the image files will be distorted if they are not square.
 
-    // determinate dimensions of image
     const unsigned widthImage = image.rows;
     const unsigned heightImage = image.cols;
 
-    // scaling factors for translating imagecoordinates to pixelcoordinates
     const double imageScaleX = static_cast<double>(widthImage - 1) / this->wingspan;
     const double imageScaleY = static_cast<double>(heightImage - 1) / this->wingspan;
 
@@ -58,12 +55,6 @@ void RpiDotStar::setStripColor() {
         // determinate pixelcoordinates for the current pixel
         unsigned xPosImg = static_cast<unsigned>(pixel.getXPos() * imageScaleX);
         unsigned yPosImg = static_cast<unsigned>(pixel.getYPos() * imageScaleY);
-        if (xPosImg > widthImage) {
-            xPosImg = widthImage;
-        }
-        if (yPosImg > heightImage) {
-            yPosImg = heightImage;
-        }
 
         if (image.channels() == 3) {
             const cv::Vec3b bgrCollors = image.at<cv::Vec3b>(cv::Point(xPosImg, yPosImg));
@@ -74,8 +65,6 @@ void RpiDotStar::setStripColor() {
             this->setPixelColor(pixel, pixelValue, pixelValue, pixelValue);
         }
     }
-
-
 }
 
 void RpiDotStar::setPixelColor(Pixel& pixel, const char& red, const char& green, const char& blue) {
